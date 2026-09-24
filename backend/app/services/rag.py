@@ -216,3 +216,58 @@ async def stream_chat_response(
             "code": app_err.code,
             "message_bn": app_err.message_bn
         })
+
+
+async def stream_explain_response(
+    page_id: str,
+    selection: str,
+    style: str,
+    request: Request
+) -> AsyncGenerator[bytes, None]:
+    """
+    Main generator for POST /api/v1/explain-selection streaming.
+    Yields:
+      1. sources event
+      2. token events
+      3. done event (or error event)
+    """
+    store = get_page_store()
+    page_index = store.get(page_id)
+    if not page_index:
+        raise err_page_not_found()
+
+    # Search with selection truncated to 500 chars
+    search_query = selection[:500].strip()
+    settings = get_settings()
+    context, sources = await retrieve_context(page_index, search_query, k=settings.RETRIEVAL_K)
+
+    # 1. Emit sources event first
+    yield ndjson({"type": "sources", "sources": sources})
+
+    # 2. Build prompt and stream
+    try:
+        from app.services.prompts import build_explain_prompt
+        prompt_text = build_explain_prompt(selection=selection, context=context, style=style)
+        messages = [HumanMessage(content=prompt_text)]
+
+        llm = get_llm(streaming=True)
+        async for chunk in llm.astream(messages):
+            if await request.is_disconnected():
+                logger.info("Client disconnected during explain-selection stream")
+                return
+
+            text_token = text_from_chunk(chunk)
+            if text_token:
+                yield ndjson({"type": "token", "text": text_token})
+
+        yield ndjson({"type": "done"})
+
+    except Exception as exc:
+        logger.error(f"Error during streaming explain-selection: {exc}")
+        app_err = map_llm_exception(exc)
+        yield ndjson({
+            "type": "error",
+            "code": app_err.code,
+            "message_bn": app_err.message_bn
+        })
+

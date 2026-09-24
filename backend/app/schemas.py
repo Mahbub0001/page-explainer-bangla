@@ -33,7 +33,7 @@ class ChatHistoryMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     page_id: str = Field(..., min_length=8, max_length=64)
-    question: str = Field(..., min_length=1, max_length=1000)
+    question: str = Field(..., min_length=1)
     style: Literal["simple", "detailed"] = Field(default="simple")
     history: List[ChatHistoryMessage] = Field(default_factory=list, max_length=8)
 
@@ -45,5 +45,6 @@ class SummarizeRequest(BaseModel):
 
 class ExplainSelectionRequest(BaseModel):
     page_id: str = Field(..., min_length=8, max_length=64)
-    selection: str = Field(..., min_length=1, max_length=4000)
+    selection: str = Field(..., min_length=1)
     style: Literal["simple", "detailed"] = Field(default="simple")
+
