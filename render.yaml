@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: bangla-page-explainer-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GEMINI_CHAT_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_EMBEDDING_MODEL
+        value: models/gemini-embedding-001
+      - key: EMBEDDING_DIMENSIONS
+        value: "768"
+      - key: LLM_TEMPERATURE
+        value: "0.3"
+      - key: APP_ENV
+        value: prod
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CORS_ALLOW_ORIGIN_REGEX
+        value: "^chrome-extension://.*$"
+      - key: MAX_TEXT_CHARS
+        value: "120000"
+      - key: MIN_TEXT_CHARS
+        value: "100"
+      - key: CHUNK_SIZE
+        value: "1500"
+      - key: CHUNK_OVERLAP
+        value: "150"
+      - key: MAX_CHUNKS
+        value: "50"
+      - key: RETRIEVAL_K
+        value: "5"
+      - key: STUFF_LIMIT_CHARS
+        value: "60000"
+      - key: MAP_CHUNK_CHARS
+        value: "8000"
+      - key: MAP_CONCURRENCY
+        value: "3"
+      - key: CACHE_MAX_PAGES
+        value: "30"
+      - key: CACHE_TTL_SECONDS
+        value: "7200"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "40"
+      - key: REQUEST_TIMEOUT_SECONDS
+        value: "90"
