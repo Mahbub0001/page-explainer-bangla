@@ -14,7 +14,7 @@ from app.errors import (
     starlette_http_exception_handler,
     generic_exception_handler,
 )
-from app.routers import health, pages
+from app.routers import health, pages, ai
 
 # Initialize logging
 setup_logging()
@@ -66,6 +66,7 @@ def create_app() -> FastAPI:
     # Include Routers
     app.include_router(health.router)
     app.include_router(pages.router)
+    app.include_router(ai.router)
 
     return app
 
