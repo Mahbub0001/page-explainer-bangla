@@ -8,3 +8,4 @@ langchain-google-genai
 pytest
 pytest-asyncio
 httpx
+numpy
