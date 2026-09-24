@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bangla Page Explainer</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-title">
+      <span id="app-title">বাংলা পেজ এক্সপ্লেইনার</span>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="btn-clear-chat" class="icon-btn" title="চ্যাট মুছুন" aria-label="Clear chat">
+        🗑️
+      </button>
+      <button type="button" id="btn-open-settings" class="icon-btn" title="সেটিংস" aria-label="Settings">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <!-- Page Changed Banner -->
+  <div id="page-changed-banner" class="page-changed-banner hidden">
+    <span id="banner-text">আপনি নতুন পেজে গেছেন। আবার বিশ্লেষণ করুন।</span>
+    <button type="button" id="btn-banner-reanalyze" class="btn-secondary btn-xs">বিশ্লেষণ</button>
+  </div>
+
+  <!-- Alert / Error Notice -->
+  <div id="alert-box" class="alert-box hidden" role="alert"></div>
+
+  <!-- Page Info & Control Card -->
+  <section class="page-card">
+    <div class="page-meta">
+      <div id="page-title" class="page-title">কোনো পেজ বিশ্লেষণ করা হয়নি</div>
+      <div class="page-badge-row">
+        <span id="badge-chunks" class="badge hidden">0 chunks</span>
+        <span id="note-truncated" class="badge hidden" style="background:#fef3c7; color:#92400e;">সংক্ষেপিত</span>
+        <span id="status-text" class="status-text"></span>
+      </div>
+    </div>
+    <div class="action-row">
+      <button type="button" id="btn-analyze" class="btn-primary">
+        <span id="btn-analyze-text">এই পেজ বিশ্লেষণ করুন</span>
+      </button>
+      <button type="button" id="btn-summary" class="btn-secondary" disabled>
+        সারসংক্ষেপ
+      </button>
+      <button type="button" id="btn-explain-selection" class="btn-secondary" disabled>
+        নির্বাচিত অংশ বুঝিয়ে দিন
+      </button>
+    </div>
+  </section>
+
+  <!-- Chat Messages Container -->
+  <main id="chat-container" class="chat-container" aria-live="polite">
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">📖</div>
+      <p id="empty-intro">যেকোনো ওয়েব পেজ সহজে বাংলায় বুঝতে এই এক্সটেনশনটি ব্যবহার করুন।</p>
+      <p id="empty-privacy" class="empty-privacy-note">পেজের মূল লেখা ব্যাকএন্ডের মাধ্যমে গুগল জেমিনাই (Gemini) এপিআইতে পাঠানো হয়।</p>
+    </div>
+  </main>
+
+  <!-- Suggestion Chips -->
+  <div id="chips-container" class="chips-container hidden">
+    <button type="button" class="chip-btn" data-chip="1">এই পেজটা কী নিয়ে?</button>
+    <button type="button" class="chip-btn" data-chip="2">মূল পয়েন্টগুলো বলুন</button>
+    <button type="button" class="chip-btn" data-chip="3">সহজ একটা উদাহরণ দিন</button>
+  </div>
+
+  <!-- Input Area -->
+  <footer class="input-area">
+    <div class="input-wrapper">
+      <textarea
+        id="chat-input"
+        class="chat-input"
+        rows="1"
+        placeholder="এই পেজ সম্পর্কে প্রশ্ন করুন…"
+        disabled
+      ></textarea>
+    </div>
+    <div class="input-btns">
+      <button type="button" id="btn-send" class="btn-primary" disabled>
+        পাঠান
+      </button>
+      <button type="button" id="btn-stop" class="btn-secondary hidden">
+        থামান
+      </button>
+    </div>
+  </footer>
+
+  <!-- Settings Modal Dialog -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-heading">
+      <div class="settings-header">
+        <span id="settings-heading">সেটিংস</span>
+        <button type="button" id="btn-close-settings" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="form-group">
+        <label for="input-backend-url">
+          <span id="label-backend-url">ব্যাকএন্ড ঠিকানা</span>
+          <span id="health-dot" class="health-dot"></span>
+        </label>
+        <input type="url" id="input-backend-url" class="form-input" value="http://localhost:8000">
+      </div>
+      <div class="form-group">
+        <label for="select-answer-style" id="label-answer-style">উত্তরের ধরন</label>
+        <select id="select-answer-style" class="form-select">
+          <option value="simple">সহজ (Simple)</option>
+          <option value="detailed">বিস্তারিত (Detailed)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="select-ui-language" id="label-ui-language">ইন্টারফেসের ভাষা</label>
+        <select id="select-ui-language" class="form-select">
+          <option value="bn">বাংলা</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <button type="button" id="btn-save-settings" class="btn-primary">সংরক্ষণ করুন</button>
+    </div>
+  </div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>

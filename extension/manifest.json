@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Bangla Page Explainer",
+  "version": "0.1.0",
+  "description": "Understand any web page in simple Bangla. Summaries, Q&A and explanations powered by RAG.",
+  "minimum_chrome_version": "114",
+  "permissions": [
+    "sidePanel",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Bangla Page Explainer"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

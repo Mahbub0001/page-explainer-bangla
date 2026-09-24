@@ -14,6 +14,7 @@ from app.errors import (
     starlette_http_exception_handler,
     generic_exception_handler,
 )
+from app.ratelimit import RateLimitMiddleware
 from app.routers import health, pages, ai
 
 # Initialize logging
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],
     )
+    app.add_middleware(RateLimitMiddleware)
 
     # Request timing & structured logging middleware
     @app.middleware("http")
