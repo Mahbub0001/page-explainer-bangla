@@ -10,7 +10,8 @@ from app.schemas import ChatHistoryMessage
 from app.services.page_store import get_page_store, PageIndex
 from app.services.prompts import SYSTEM_BASE
 from app.services.streaming import text_from_chunk
-from app.services.rag import rewrite_query
+from app.services.rag import rewrite_query, select_candidate_chunks
+
 
 
 def test_text_from_chunk():
@@ -155,3 +156,81 @@ async def test_chat_stream_order(monkeypatch, fake_embeddings, fake_chat_model, 
 
     # Last event must be done
     assert events[-1]["type"] == "done"
+
+
+def test_select_candidate_chunks_bm25():
+    # Construct 15 dummy chunks
+    chunks = [
+        Document(page_content=f"ভূমিকা ও সাধারণ পরিচয় {i}", metadata={"chunk_id": i})
+        for i in range(15)
+    ]
+    # Set chunk 5 to contain specific keywords
+    chunks[5] = Document(
+        page_content="সৌরজগতের প্রধান গ্রহ হলো বৃহস্পতি এবং শনি।",
+        metadata={"chunk_id": 5}
+    )
+
+    # Query matching chunk 5
+    query = "বৃহস্পতি গ্রহ"
+    candidates = select_candidate_chunks(chunks, query, top_n=6)
+
+    # Must contain <= 6 chunks
+    assert len(candidates) == 6
+
+    cand_ids = [c.metadata["chunk_id"] for c in candidates]
+    # Must always include lead chunk 0
+    assert 0 in cand_ids
+    # Must include matching chunk 5
+    assert 5 in cand_ids
+
+
+@pytest.mark.asyncio
+async def test_lazy_embedding_on_chat(monkeypatch, fake_embeddings, fake_chat_model, async_client: AsyncClient):
+    get_page_store().clear()
+    monkeypatch.setattr("app.routers.pages.get_embeddings", lambda: fake_embeddings)
+    monkeypatch.setattr("app.services.rag.get_llm", lambda *a, **kw: fake_chat_model)
+
+    # 1. Index a page with substantial text (multiple chunks)
+    long_text = " ".join([
+        f"অনুচ্ছেদ নম্বর {i}: কৃত্রিম বুদ্ধিমত্তা হলো তথ্য প্রযুক্তির একটি গুরুত্বপূর্ণ শাখা যা মানব বুদ্ধিমত্তাকে অনুকরণ করে।"
+        for i in range(25)
+    ])
+    payload = {
+        "url": "https://example.com/lazy-test",
+        "title": "Lazy Test Page",
+        "text": long_text,
+        "truncated": False,
+        "lang": "bn"
+    }
+
+    res_idx = await async_client.post("/api/v1/pages/index", json=payload)
+    assert res_idx.status_code == 200
+    page_id = res_idx.json()["page_id"]
+
+    store = get_page_store()
+    entry = store.get(page_id)
+    assert entry is not None
+    assert len(entry.raw_chunks) > 0
+    # Initially 0 chunks are embedded
+    assert len(entry.embedded_chunk_ids) == 0
+
+    # 2. First chat query triggers lazy embedding of candidates only
+    chat_payload = {
+        "page_id": page_id,
+        "question": "কৃত্রিম বুদ্ধিমত্তা কি?",
+        "style": "simple",
+        "history": []
+    }
+    res_chat1 = await async_client.post("/api/v1/chat", json=chat_payload)
+    assert res_chat1.status_code == 200
+
+    # Verify only top candidates were embedded, NOT all 25 chunks
+    assert len(entry.embedded_chunk_ids) <= 12
+    assert len(entry.embedded_chunk_ids) > 0
+    first_count = len(entry.embedded_chunk_ids)
+
+    # 3. Second identical or similar query reuses cached embeddings
+    res_chat2 = await async_client.post("/api/v1/chat", json=chat_payload)
+    assert res_chat2.status_code == 200
+    assert len(entry.embedded_chunk_ids) == first_count
+

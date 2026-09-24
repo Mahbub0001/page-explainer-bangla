@@ -31,12 +31,20 @@ async def test_index_page_happy_path(monkeypatch, fake_embeddings, async_client:
     assert data1["cached"] is False
     assert data1["title"] == "Test Article"
 
+    # Verify lazy state: raw_chunks stored, 0 embeddings generated upfront
+    entry = get_page_store().get(data1["page_id"])
+    assert entry is not None
+    assert len(entry.raw_chunks) > 0
+    assert len(entry.embedded_chunk_ids) == 0
+    assert len(entry.vector_store.store) == 0
+
     # Second request: cached
     res2 = await async_client.post("/api/v1/pages/index", json=payload)
     assert res2.status_code == 200
     data2 = res2.json()
     assert data2["page_id"] == data1["page_id"]
     assert data2["cached"] is True
+
 
 
 @pytest.mark.asyncio

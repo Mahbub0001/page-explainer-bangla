@@ -1,10 +1,11 @@
 import time
 import hashlib
 import asyncio
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Set
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
 from app.config import get_settings
 
@@ -21,6 +22,9 @@ class PageIndex:
     vector_store: InMemoryVectorStore
     created_at: float
     last_used: float
+    raw_chunks: List[Document] = field(default_factory=list)
+    embedded_chunk_ids: Set[int] = field(default_factory=set)
+
 
 
 def normalize_url(url: str) -> str:
