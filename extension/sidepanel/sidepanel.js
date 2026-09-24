@@ -180,6 +180,12 @@ function updateUi() {
   elChatInput.disabled = !isReady;
   elBtnSend.disabled = !isReady || !elChatInput.value.trim();
 
+  if (state.status === "ready") {
+    elChatInput.placeholder = t("input_placeholder");
+  } else if (state.status === "error") {
+    elChatInput.placeholder = t("input_placeholder_error");
+  }
+
   // Streaming stop button
   if (state.status === "answering") {
     elBtnStop.classList.remove("hidden");

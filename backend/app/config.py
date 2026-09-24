@@ -23,9 +23,9 @@ class Settings(BaseSettings):
 
     MAX_TEXT_CHARS: int = 120000
     MIN_TEXT_CHARS: int = 100
-    CHUNK_SIZE: int = 1000
+    CHUNK_SIZE: int = 1500
     CHUNK_OVERLAP: int = 150
-    MAX_CHUNKS: int = 200
+    MAX_CHUNKS: int = 50
     RETRIEVAL_K: int = 5
     STUFF_LIMIT_CHARS: int = 60000
     MAP_CHUNK_CHARS: int = 8000

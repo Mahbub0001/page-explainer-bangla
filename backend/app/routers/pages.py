@@ -77,12 +77,27 @@ async def index_page(payload: PageIndexRequest):
         chunks, chunks_truncated = chunk_text(text, page_id=page_id, title=payload.title)
         was_truncated = was_truncated or chunks_truncated
 
-        # Generate embeddings and initialize vector store
+        # Generate embeddings and initialize vector store in safe sub-batches
         try:
             embeddings = get_embeddings()
             vector_store = InMemoryVectorStore(embedding=embeddings)
             if chunks:
-                await vector_store.aadd_documents(chunks)
+                BATCH_SIZE = 25
+                for i in range(0, len(chunks), BATCH_SIZE):
+                    sub_batch = chunks[i:i + BATCH_SIZE]
+                    try:
+                        await vector_store.aadd_documents(sub_batch)
+                    except Exception as sub_err:
+                        err_str = str(sub_err).lower()
+                        # If rate limited after some chunks are indexed, keep partial index
+                        if len(vector_store.store) > 0 and ("429" in err_str or "resourceexhausted" in err_str or "quota" in err_str):
+                            logger.warning(
+                                f"Hit rate limit after indexing {len(vector_store.store)} chunks for page_id={page_id}. Proceeding with partial index."
+                            )
+                            was_truncated = True
+                            chunks = chunks[:len(vector_store.store)]
+                            break
+                        raise sub_err
         except Exception as e:
             logger.error(f"Error embedding chunks for page_id={page_id}: {e}")
             raise map_llm_exception(e)
