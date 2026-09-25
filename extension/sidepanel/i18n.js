@@ -8,7 +8,9 @@ export const STRINGS = {
     reanalyze: "আবার বিশ্লেষণ করুন",
     extracting: "পেজ পড়া হচ্ছে…",
     indexing: "বুঝে নেওয়া হচ্ছে…",
+    server_waking: "সার্ভার প্রস্তুত হচ্ছে (একটু অপেক্ষা করুন)…",
     ready: "প্রস্তুত! এখন প্রশ্ন করুন",
+
     summary: "সারসংক্ষেপ",
     explain_selection: "নির্বাচিত অংশ বুঝিয়ে দিন",
     input_placeholder: "এই পেজ সম্পর্কে প্রশ্ন করুন…",
@@ -47,7 +49,9 @@ export const STRINGS = {
     reanalyze: "Analyze again",
     extracting: "Reading the page…",
     indexing: "Understanding the page…",
+    server_waking: "Server is starting up (please wait a moment)…",
     ready: "Ready! Ask a question",
+
     summary: "Summary",
     explain_selection: "Explain selection",
     input_placeholder: "Ask about this page…",

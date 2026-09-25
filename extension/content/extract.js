@@ -115,15 +115,24 @@
       // 2. Try Mozilla Readability if available
       if (typeof Readability === "function") {
         try {
-          const documentClone = document.cloneNode(true);
-          const reader = new Readability(documentClone);
-          const article = reader.parse();
+          const docClone = document.implementation.createHTMLDocument(document.title || "");
+          const mainTarget =
+            document.querySelector("article") ||
+            document.querySelector("main") ||
+            document.querySelector('[role="main"]') ||
+            document.body;
 
-          if (article && article.content) {
-            extractedTitle = article.title || document.title || "";
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(article.content, "text/html");
-            extractedText = htmlToText(doc.body);
+          if (mainTarget) {
+            docClone.body.appendChild(mainTarget.cloneNode(true));
+            const reader = new Readability(docClone, { charThreshold: 100 });
+            const article = reader.parse();
+
+            if (article && article.content) {
+              extractedTitle = article.title || document.title || "";
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(article.content, "text/html");
+              extractedText = htmlToText(doc.body);
+            }
           }
         } catch (e) {
           console.warn("[Bangla Page Explainer] Readability parsing failed, falling back:", e);

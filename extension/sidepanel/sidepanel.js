@@ -168,20 +168,22 @@ function updateUi() {
     elStatusText.textContent = "";
   }
 
-  // Buttons availability
-  const isBusy = state.status === "extracting" || state.status === "indexing" || state.status === "answering";
-  const isReady = state.status === "ready";
+  // Buttons availability - never block the user from typing or asking!
+  const isAnswering = state.status === "answering";
+  const isAnalyzing = state.status === "extracting" || state.status === "indexing";
 
-  elBtnAnalyze.disabled = isBusy;
-  elBtnSummary.disabled = !isReady;
-  elBtnExplainSelection.disabled = !isReady;
-  elChatInput.disabled = !isReady;
-  elBtnSend.disabled = !isReady || !elChatInput.value.trim();
+  elBtnAnalyze.disabled = isAnswering || isAnalyzing;
+  elBtnSummary.disabled = isAnswering;
+  elBtnExplainSelection.disabled = isAnswering;
+  elChatInput.disabled = isAnswering;
+  elBtnSend.disabled = isAnswering || !elChatInput.value.trim();
 
-  if (state.status === "ready") {
+  if (state.status === "extracting") {
+    elChatInput.placeholder = t("extracting");
+  } else if (state.status === "indexing") {
+    elChatInput.placeholder = t("indexing");
+  } else {
     elChatInput.placeholder = t("input_placeholder");
-  } else if (state.status === "error") {
-    elChatInput.placeholder = t("input_placeholder_error");
   }
 
   // Streaming stop button
@@ -193,8 +195,8 @@ function updateUi() {
     elBtnSend.classList.remove("hidden");
   }
 
-  // Suggestion chips
-  if (isReady && state.messages.length === 0) {
+  // Suggestion chips: always visible when chat is empty and not answering!
+  if (!isAnswering && state.messages.length === 0) {
     elChipsContainer.classList.remove("hidden");
   } else {
     elChipsContainer.classList.add("hidden");
@@ -243,6 +245,12 @@ async function handleAnalyze() {
   updateUi();
 
   // 2. Index with backend
+  const coldStartTimer = setTimeout(() => {
+    if (state.status === "indexing") {
+      elStatusText.textContent = t("server_waking");
+    }
+  }, 1800);
+
   try {
     const res = await indexPage(state.settings.backendUrl, {
       url: extractResult.url,
@@ -251,6 +259,7 @@ async function handleAnalyze() {
       truncated: extractResult.truncated,
       lang: extractResult.lang || "en",
     });
+    clearTimeout(coldStartTimer);
 
     state.pageId = res.page_id;
     state.chunkCount = res.chunk_count;
@@ -259,6 +268,7 @@ async function handleAnalyze() {
     state.saveCurrentTabSession();
     clearAlert();
   } catch (err) {
+    clearTimeout(coldStartTimer);
     console.error("Index error:", err);
     state.status = "error";
     if (err.code === "BACKEND_DOWN") {
@@ -273,6 +283,27 @@ async function handleAnalyze() {
   }
 
   updateUi();
+}
+
+let activeAnalyzePromise = null;
+
+async function ensurePageAnalyzed() {
+  if (state.pageId) return true;
+  if (activeAnalyzePromise) return await activeAnalyzePromise;
+
+  activeAnalyzePromise = (async () => {
+    try {
+      await handleAnalyze();
+      return Boolean(state.pageId);
+    } catch (err) {
+      console.warn("Auto-analyze error:", err);
+      return false;
+    } finally {
+      activeAnalyzePromise = null;
+    }
+  })();
+
+  return await activeAnalyzePromise;
 }
 
 /**
@@ -388,12 +419,12 @@ async function runStreamingTask(path, body, retryCount = 0) {
 
 async function handleSendMessage(customText = null) {
   const text = customText !== null ? customText : elChatInput.value.trim();
-  if (!text || state.status !== "ready") return;
+  if (!text || state.status === "answering") return;
 
   elChatInput.value = "";
   elChatInput.style.height = "auto";
 
-  // Add user message
+  // Add user message immediately
   state.messages.push({
     id: Date.now(),
     role: "user",
@@ -401,6 +432,14 @@ async function handleSendMessage(customText = null) {
     sources: [],
     streaming: false,
   });
+  renderAllMessages();
+  scrollChatToBottom(true);
+
+  // If page not analyzed yet, auto-analyze on demand
+  if (!state.pageId) {
+    const ok = await ensurePageAnalyzed();
+    if (!ok) return;
+  }
 
   // Prepare history messages (up to 8)
   const history = state.messages
@@ -421,7 +460,11 @@ async function handleSendMessage(customText = null) {
 }
 
 async function handleSummary() {
-  if (state.status !== "ready") return;
+  if (state.status === "answering") return;
+  if (!state.pageId) {
+    const ok = await ensurePageAnalyzed();
+    if (!ok) return;
+  }
   await runStreamingTask("/api/v1/summarize", {
     page_id: state.pageId,
     style: state.settings.answerStyle,
@@ -429,13 +472,18 @@ async function handleSummary() {
 }
 
 async function handleExplainSelection() {
-  if (state.status !== "ready") return;
+  if (state.status === "answering") return;
   clearAlert();
 
   const selection = await getSelectionFromPage(state.tabId);
   if (!selection) {
     showAlert(t("err_no_selection"));
     return;
+  }
+
+  if (!state.pageId) {
+    const ok = await ensurePageAnalyzed();
+    if (!ok) return;
   }
 
   await runStreamingTask("/api/v1/explain-selection", {
@@ -587,6 +635,18 @@ async function init() {
   renderAllMessages();
 
   await checkCurrentTab();
+
+  // Background Pre-heat:
+  // 1. Silently wake up Render backend if cold
+  if (state.settings && state.settings.backendUrl) {
+    fetch(`${state.settings.backendUrl}/health`).catch(() => {});
+  }
+
+  // 2. Silently extract and index active page in background so it's ready before user even asks
+  if (!state.pageId) {
+    ensurePageAnalyzed().catch(() => {});
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
