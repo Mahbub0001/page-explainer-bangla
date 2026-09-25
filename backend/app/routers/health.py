@@ -4,7 +4,7 @@ from app.config import get_settings
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health", methods=["GET", "HEAD"])
+@router.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     settings = get_settings()
     
