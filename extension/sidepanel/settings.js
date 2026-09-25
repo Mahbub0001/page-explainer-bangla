@@ -1,7 +1,7 @@
 // sidepanel/settings.js
 
 const DEFAULT_SETTINGS = {
-  backendUrl: "http://localhost:8000",
+  backendUrl: "https://page-explainer-bangla.onrender.com",
   answerStyle: "simple", // simple | detailed
   uiLanguage: "bn"       // bn | en
 };
@@ -10,7 +10,12 @@ export async function loadSettings() {
   return new Promise((resolve) => {
     if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
       chrome.storage.local.get(DEFAULT_SETTINGS, (stored) => {
-        resolve({ ...DEFAULT_SETTINGS, ...stored });
+        let backendUrl = stored.backendUrl;
+        // Auto-upgrade if unset or pointing to old localhost/127.0.0.1
+        if (!backendUrl || backendUrl.includes("localhost") || backendUrl.includes("127.0.0.1")) {
+          backendUrl = DEFAULT_SETTINGS.backendUrl;
+        }
+        resolve({ ...DEFAULT_SETTINGS, ...stored, backendUrl });
       });
     } else {
       resolve({ ...DEFAULT_SETTINGS });

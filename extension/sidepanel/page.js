@@ -1,7 +1,15 @@
 // sidepanel/page.js
 
+function getBrowserApi() {
+  if (typeof chrome !== "undefined" && chrome.tabs) return chrome;
+  if (typeof browser !== "undefined" && browser.tabs) return browser;
+  return null;
+}
+
 export async function getActiveTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const api = getBrowserApi();
+  if (!api || !api.tabs) return null;
+  const [tab] = await api.tabs.query({ active: true, currentWindow: true });
   return tab || null;
 }
 
@@ -15,7 +23,9 @@ export function isRestrictedUrl(url) {
     const host = parsed.hostname.toLowerCase();
     if (
       host === "chrome.google.com" ||
-      host === "chromewebstore.google.com"
+      host === "chromewebstore.google.com" ||
+      host === "microsoftedge.microsoft.com" ||
+      host === "addons.mozilla.org"
     ) {
       return true;
     }
@@ -34,15 +44,20 @@ export async function extractActivePage(tabId, tabUrl) {
     return { ok: false, reason: "restricted" };
   }
 
+  const api = getBrowserApi();
+  if (!api || !api.scripting) {
+    return { ok: false, reason: "generic" };
+  }
+
   try {
     // 1. Inject Readability and extractor script
-    await chrome.scripting.executeScript({
+    await api.scripting.executeScript({
       target: { tabId },
       files: ["lib/Readability.js", "content/extract.js"],
     });
 
     // 2. Call extraction function
-    const [response] = await chrome.scripting.executeScript({
+    const [response] = await api.scripting.executeScript({
       target: { tabId },
       func: () => (window.__bpeExtractPage ? window.__bpeExtractPage() : null),
     });
@@ -59,8 +74,11 @@ export async function extractActivePage(tabId, tabUrl) {
 }
 
 export async function getSelectionFromPage(tabId) {
+  const api = getBrowserApi();
+  if (!api || !api.scripting) return "";
+
   try {
-    const [response] = await chrome.scripting.executeScript({
+    const [response] = await api.scripting.executeScript({
       target: { tabId },
       func: () => (window.__bpeGetSelection ? window.__bpeGetSelection() : ""),
     });
@@ -72,8 +90,11 @@ export async function getSelectionFromPage(tabId) {
 }
 
 export async function highlightInPage(tabId, snippet) {
+  const api = getBrowserApi();
+  if (!api || !api.scripting) return false;
+
   try {
-    const [response] = await chrome.scripting.executeScript({
+    const [response] = await api.scripting.executeScript({
       target: { tabId },
       func: (text) => (window.__bpeHighlight ? window.__bpeHighlight(text) : false),
       args: [snippet],

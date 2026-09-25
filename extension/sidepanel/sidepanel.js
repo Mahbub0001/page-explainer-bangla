@@ -44,10 +44,8 @@ const elBtnOpenSettings = document.getElementById("btn-open-settings");
 const elSettingsModal = document.getElementById("settings-modal");
 const elBtnCloseSettings = document.getElementById("btn-close-settings");
 const elBtnSaveSettings = document.getElementById("btn-save-settings");
-const elInputBackendUrl = document.getElementById("input-backend-url");
 const elSelectAnswerStyle = document.getElementById("select-answer-style");
 const elSelectUiLanguage = document.getElementById("select-ui-language");
-const elHealthDot = document.getElementById("health-dot");
 
 function showAlert(message) {
   if (!message) {
@@ -497,23 +495,9 @@ function autoGrowTextarea() {
 
 // Settings modal
 async function openSettings() {
-  elInputBackendUrl.value = state.settings.backendUrl;
   elSelectAnswerStyle.value = state.settings.answerStyle;
   elSelectUiLanguage.value = state.settings.uiLanguage;
   elSettingsModal.classList.remove("hidden");
-
-  // Ping backend health
-  checkHealthIndicator();
-}
-
-async function checkHealthIndicator() {
-  elHealthDot.className = "health-dot";
-  const res = await testBackendHealth(elInputBackendUrl.value);
-  if (res.ok) {
-    elHealthDot.className = "health-dot ok";
-  } else {
-    elHealthDot.className = "health-dot err";
-  }
 }
 
 async function closeSettings() {
@@ -521,12 +505,11 @@ async function closeSettings() {
 }
 
 async function saveSettingsFromModal() {
-  const newUrl = normalizeBackendUrl(elInputBackendUrl.value);
   const newStyle = elSelectAnswerStyle.value;
   const newLang = elSelectUiLanguage.value;
 
   state.settings = await saveSettings({
-    backendUrl: newUrl,
+    backendUrl: state.settings.backendUrl || "https://page-explainer-bangla.onrender.com",
     answerStyle: newStyle,
     uiLanguage: newLang,
   });
@@ -566,7 +549,6 @@ function initEventListeners() {
   elBtnOpenSettings.addEventListener("click", openSettings);
   elBtnCloseSettings.addEventListener("click", closeSettings);
   elBtnSaveSettings.addEventListener("click", saveSettingsFromModal);
-  elInputBackendUrl.addEventListener("change", checkHealthIndicator);
 
   // Esc closes settings modal
   window.addEventListener("keydown", (e) => {
@@ -576,11 +558,18 @@ function initEventListeners() {
   });
 
   // Tab activation and update listeners
-  if (typeof chrome !== "undefined" && chrome.tabs) {
-    chrome.tabs.onActivated.addListener(() => {
+  const tabsApi =
+    typeof chrome !== "undefined" && chrome.tabs
+      ? chrome.tabs
+      : typeof browser !== "undefined" && browser.tabs
+      ? browser.tabs
+      : null;
+
+  if (tabsApi) {
+    tabsApi.onActivated.addListener(() => {
       checkCurrentTab();
     });
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    tabsApi.onUpdated.addListener((tabId, changeInfo) => {
       if (changeInfo.url || changeInfo.status === "complete") {
         checkCurrentTab();
       }

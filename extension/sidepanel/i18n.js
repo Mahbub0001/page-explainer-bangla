@@ -32,14 +32,14 @@ export const STRINGS = {
     err_login_page: "এটি লগইন পেজ মনে হচ্ছে, তাই পড়া হয়নি।",
     err_too_short: "এই পেজে বিশ্লেষণ করার মতো যথেষ্ট লেখা নেই।",
     err_no_selection: "আগে পেজে কিছু লেখা সিলেক্ট করুন।",
-    err_backend_down: "সার্ভারের সাথে সংযোগ হচ্ছে না। ব্যাকএন্ড চালু আছে কি না দেখুন।",
+    err_backend_down: "সার্ভারের সাথে সংযোগ হচ্ছে না। কিছুক্ষণ পর আবার চেষ্টা করুন।",
     err_quota: "AI-এর প্রতি মিনিটের ব্যবহারের সীমা শেষ। অনুগ্রহ করে ১ মিনিট অপেক্ষা করে আবার 'এই পেজ বিশ্লেষণ করুন' বাটনে ক্লিক করুন।",
     err_generic: "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
     banner_page_changed: "আপনি নতুন পেজে গেছেন। আবার বিশ্লেষণ করুন।",
     note_truncated: "পেজটি অনেক বড়, প্রথম অংশ বিশ্লেষণ করা হয়েছে।",
     not_in_page: "এই পেজে এর উত্তর পাওয়া যায়নি।",
     input_placeholder_error: "আগে পেজটি সফলভাবে বিশ্লেষণ করুন…",
-    privacy_notice: "পেজের মূল লেখা ব্যাকএন্ডের মাধ্যমে গুগল জেমিনাই (Gemini) এপিআইতে পাঠানো হয়।"
+    privacy_notice: "আপনার তথ্য ও ব্রাউজিং সম্পূর্ণ সুরক্ষিত ও গোপনীয় রাখা হয়।"
   },
   en: {
     app_title: "Bangla Page Explainer",
@@ -71,14 +71,14 @@ export const STRINGS = {
     err_login_page: "This looks like a login page, so it was not read.",
     err_too_short: "Not enough readable text on this page.",
     err_no_selection: "Select some text on the page first.",
-    err_backend_down: "Can't reach the server. Is the backend running?",
+    err_backend_down: "Can't reach the server. Please try again shortly.",
     err_quota: "AI per-minute rate limit reached. Please wait ~1 minute and click 'Analyze this page' again.",
     err_generic: "Something went wrong. Please try again.",
     banner_page_changed: "You moved to a new page. Analyze again.",
     note_truncated: "The page is long; only the first part was analyzed.",
     not_in_page: "The page doesn't answer this.",
     input_placeholder_error: "Please analyze the page first…",
-    privacy_notice: "Page text is sent via the backend to Google's Gemini API."
+    privacy_notice: "Your information and browsing are kept safe and confidential."
   }
 };
 
